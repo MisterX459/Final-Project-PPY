@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Board</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            margin: auto;
+        }
+        td {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ddd;
+            background-color: #00FFFF;
+        }
+        td.active {
+            background-color: #FF0000;
+        }
+    </style>
+    <script>
+        let intervalID = null;
+
+        function startGame() {
+            fetch('/start_game', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        intervalID = setInterval(updateBoard, 1000);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function updateBoard() {
+            fetch('/get_board')
+                .then(response => response.json())
+                .then(data => {
+                    const table = document.querySelector('table');
+                    table.innerHTML = '';
+                    data.forEach((row, i) => {
+                        const tr = document.createElement('tr');
+                        row.forEach(cell => {
+                            const td = document.createElement('td');
+                            if (cell === 1) {
+                                td.className = 'active';
+                            }
+                            tr.appendChild(td);
+                        });
+                        table.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</head>
+<body>
+    <h1>Welcome, {{ name }}!</h1>
+    <button onclick="startGame()">Start Game</button>
+    <table></table>
+</body>
+</html>
