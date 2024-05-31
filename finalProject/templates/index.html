@@ -23,13 +23,13 @@
             flex-direction: column;
             gap: 10px;
         }
-        input, button {
+        input, select, button {
             padding: 10px;
             border: 2px solid #ddd;
             border-radius: 4px;
             transition: border-color 0.3s;
         }
-        input:focus, button:focus {
+        input:focus, select:focus, button:focus {
             border-color: #0056b3;
             outline: none;
         }
@@ -53,6 +53,11 @@
         <input type="text" id="name" name="name" required>
         <label for="size">Size:</label>
         <input type="number" id="size" name="size" min="10" max="25" required>
+        <label for="map_type">Map Type:</label>
+        <select id="map_type" name="map_type">
+            <option value="random">Random Maze</option>
+            <option value="premade">Premade Map</option>
+        </select>
         <button type="submit">Create Board</button>
     </form>
 </body>

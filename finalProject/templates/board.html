@@ -4,17 +4,62 @@
     <meta charset="UTF-8">
     <title>Game Board</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eaeaea;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 20px;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: #333;
+            background: linear-gradient(145deg, #6ae0f9, #0051c8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background: linear-gradient(145deg, #fc466b, #3f5efb);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background: linear-gradient(145deg, #3f5efb, #fc466b);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
         table {
             border-collapse: collapse;
-            margin: auto;
+            margin-top: 10px;
+            box-shadow: 0 0 15px 5px #ff0000;
         }
         td {
             width: 20px;
             height: 20px;
             border: 1px solid #ddd;
-            background-color: #00FFFF;
+            background-color: #f0f0f0;
         }
-        td.active {
+        .wall {
+            background-color: #000000;
+        }
+        .path {
+            background-color: #FFFFFF;
+        }
+        .start {
+            background-color: #00FF00;
+        }
+        .end {
             background-color: #FF0000;
         }
     </style>
@@ -42,8 +87,21 @@
                         const tr = document.createElement('tr');
                         row.forEach(cell => {
                             const td = document.createElement('td');
-                            if (cell === 1) {
-                                td.className = 'active';
+                            switch(cell) {
+                                case 0:
+                                    td.className = 'wall';
+                                    break;
+                                case 1:
+                                    td.className = 'path';
+                                    break;
+                                case 2:
+                                    td.className = 'start';
+                                    break;
+                                case 3:
+                                    td.className = 'end';
+                                    break;
+                                default:
+                                    td.className = '';
                             }
                             tr.appendChild(td);
                         });
