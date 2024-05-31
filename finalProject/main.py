@@ -2,9 +2,18 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import threading
 import random
 import time
+from collections import deque
 
 app = Flask(__name__)
 app.secret_key = 'qwerty'
+
+example_map = [
+    [1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 0],
+    [1, 1, 1, 0, 0],
+    [0, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1]
+]
 
 game_board = []
 board_lock = threading.Lock()
@@ -14,62 +23,124 @@ update_thread = None
 def validate_size(size):
     try:
         size = int(size)
-        if 10 <= size <= 25:
-            return size
-        else:
-            return 20
+        if size < 10:
+            size = 11
+        elif size > 25:
+            size = 25
+
+        if size % 2 == 0:
+            size += 1 if size < 25 else -1
+
+        return size
     except ValueError:
-        return 20
+        return 11
 
 
-def update_board():
-    global game_board
-    while True:
-        time.sleep(1)
-        # TEMPORARY. Thread test
-        with board_lock:
-            for row in game_board:
-                for i in range(len(row)):
-                    row[i] = 0
-            i = random.randint(0, len(game_board) - 1)
-            j = random.randint(0, len(game_board[0]) - 1)
-            game_board[i][j] = 1
-        # TEMPORARY. Thread test
+def make_maze(w, h):
+    maze = [[0] * w for _ in range(h)]
+    stack = [(1, 1)]
+    maze[1][1] = 1
 
+    def valid_neighbours(x, y):
+        neighbours = []
+        if x > 2 and maze[y][x - 2] == 0:
+            neighbours.append((x - 2, y))
+        if x < w - 3 and maze[y][x + 2] == 0:
+            neighbours.append((x + 2, y))
+        if y > 2 and maze[y - 2][x] == 0:
+            neighbours.append((x, y - 2))
+        if y < h - 3 and maze[y + 2][x] == 0:
+            neighbours.append((x, y + 2))
+        return neighbours
+
+    while stack:
+        x, y = stack[-1]
+        neighbours = valid_neighbours(x, y)
+        if not neighbours:
+            stack.pop()
+        else:
+            nx, ny = random.choice(neighbours)
+            maze[ny][nx] = 1
+            maze[(ny + y) // 2][(nx + x) // 2] = 1
+            stack.append((nx, ny))
+
+    maze[0][1] = 1
+    maze[h - 1][w - 2] = 1
+
+    for i in range(w):
+        maze[0][i] = 0
+        maze[h - 1][i] = 0
+    for j in range(h):
+        maze[j][0] = 0
+        maze[j][w - 1] = 0
+
+    maze[0][1] = 1
+    maze[h - 1][w - 2] = 1
+
+    for _ in range(w * h // 10):
+        rx = random.randint(1, w - 2)
+        ry = random.randint(1, h - 2)
+        if maze[ry][rx] == 0:
+            maze[ry][rx] = 1
+
+    return maze
+
+def bfs(maze, start, end):
+    queue = deque([start])
+    visited = set()
+    visited.add(start)
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    while queue:
+        x, y = queue.popleft()
+        if (x, y) == end:
+            return True
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < len(maze[0]) and 0 <= ny < len(maze) and maze[ny][nx] == 1 and (nx, ny) not in visited:
+                queue.append((nx, ny))
+                visited.add((nx, ny))
+    return False
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         size = validate_size(request.form['size'])
+        map_type = request.form.get('map_type', 'random')
         session['player_name'] = request.form['name']
         session['size'] = size
+        session['map_type'] = map_type
         return redirect(url_for('board'))
     return render_template('index.html')
-
 
 @app.route('/board', methods=['GET'])
 def board():
     size = session.get('size', 20)
+    map_type = session.get('map_type', 'random')
     global game_board
-    game_board = [[0 for _ in range(size)] for _ in range(size)]
-    return render_template('board.html', size=size, name=session.get('player_name'))
 
+    if map_type == 'premade':
+        game_board = example_map
+    else:
+        start = (1, 0)
+        end = (size - 2, size - 1)
+        game_board = make_maze(size, size)
+        while not bfs(game_board, start, end):
+            game_board = make_maze(size, size)
+        game_board[0][1] = 2
+        game_board[size - 1][size - 2] = 3
+
+
+    return render_template('board.html', board=game_board, name=session['player_name'])
 
 @app.route('/start_game', methods=['POST'])
 def start_game():
-    global update_thread
-    if update_thread is None:
-        update_thread = threading.Thread(target=update_board)
-        update_thread.daemon = True
-        update_thread.start()
     return jsonify({'status': 'started'})
-
 
 @app.route('/get_board')
 def get_board():
     with board_lock:
         return jsonify(game_board)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
