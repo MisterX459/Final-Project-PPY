@@ -62,16 +62,44 @@
         .end {
             background-color: #FF0000;
         }
+        .robot {
+            background-color: #0000FF;
+        }
+        .move-input {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            text-align: center;
+            margin: 5px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .move-input:focus {
+            border-color: #3f5efb;
+            box-shadow: 0 0 10px 3px rgba(63, 94, 251, 0.5);
+            outline: none;
+            animation: glow 1s infinite alternate;
+        }
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px 3px rgba(63, 94, 251, 0.5);
+            }
+            to {
+                box-shadow: 0 0 20px 6px rgba(63, 94, 251, 0.8);
+            }
+        }
     </style>
     <script>
-        let intervalID = null;
+        let robotPosition = [0, 1];
 
         function startGame() {
             fetch('/start_game', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'started') {
-                        intervalID = setInterval(updateBoard, 1000);
+                        updateBoard();
                     }
                 })
                 .catch(error => console.error('Error:', error));
@@ -85,7 +113,7 @@
                     table.innerHTML = '';
                     data.forEach((row, i) => {
                         const tr = document.createElement('tr');
-                        row.forEach(cell => {
+                        row.forEach((cell, j) => {
                             const td = document.createElement('td');
                             switch(cell) {
                                 case 0:
@@ -103,6 +131,9 @@
                                 default:
                                     td.className = '';
                             }
+                            if (i === robotPosition[0] && j === robotPosition[1]) {
+                                td.className = 'robot';
+                            }
                             tr.appendChild(td);
                         });
                         table.appendChild(tr);
@@ -110,11 +141,101 @@
                 })
                 .catch(error => console.error('Error:', error));
         }
+
+        function validateMoves(moves) {
+            const validMoves = ['u', 'd', 'l', 'r', 'n'];
+            let noneCount = 0;
+
+            for (let i = 0; i < moves.length; i++) {
+                if (!validMoves.includes(moves[i])) {
+                    alert('Invalid move detected. Only u, d, l, r, n are allowed.');
+                    return false;
+                }
+                if (moves[i] === 'n') {
+                    noneCount++;
+                    if (i < 4) {
+                        alert('The "none" (n) move can only be used in the last field.');
+                        return false;
+                    }
+                    if (noneCount > 1) {
+                        alert('The "none" (n) move can only be used once.');
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        function clearMoveInputs() {
+            document.getElementById('move1').value = '';
+            document.getElementById('move2').value = '';
+            document.getElementById('move3').value = '';
+            document.getElementById('move4').value = '';
+            document.getElementById('move5').value = '';
+        }
+
+        function submitMoves() {
+            const moves = [
+                document.getElementById('move1').value,
+                document.getElementById('move2').value,
+                document.getElementById('move3').value,
+                document.getElementById('move4').value,
+                document.getElementById('move5').value
+            ];
+
+            if (!validateMoves(moves)) {
+                return;
+            }
+
+            let currentIndex = 0;
+
+            function moveNext() {
+                if (currentIndex < moves.length) {
+                    fetch('/move', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ moves: [moves[currentIndex]] })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.result) {
+                                robotPosition = data.position;
+                                updateBoard();
+                                currentIndex++;
+                                setTimeout(moveNext, 500); // Move to the next step after 500ms
+                            } else {
+                                alert('Invalid move sequence.');
+                            }
+                            if (currentIndex === moves.length) {
+                                clearMoveInputs();
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+            }
+
+            moveNext();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateBoard();
+        });
     </script>
 </head>
 <body>
     <h1>Welcome, {{ name }}!</h1>
     <button onclick="startGame()">Start Game</button>
+    <div>
+        <input type="text" id="move1" class="move-input" maxlength="1" placeholder="Move 1 (u, d, l, r)">
+        <input type="text" id="move2" class="move-input" maxlength="1" placeholder="Move 2 (u, d, l, r)">
+        <input type="text" id="move3" class="move-input" maxlength="1" placeholder="Move 3 (u, d, l, r)">
+        <input type="text" id="move4" class="move-input" maxlength="1" placeholder="Move 4 (u, d, l, r)">
+        <input type="text" id="move5" class="move-input" maxlength="1" placeholder="Move 5 (u, d, l, r, n)">
+    </div>
+    <button onclick="submitMoves()">Submit Moves</button>
     <table></table>
 </body>
 </html>

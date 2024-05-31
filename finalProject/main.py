@@ -16,6 +16,7 @@ example_map = [
 ]
 
 game_board = []
+robot_position = [0, 1]
 board_lock = threading.Lock()
 update_thread = None
 
@@ -102,6 +103,30 @@ def bfs(maze, start, end):
                 visited.add((nx, ny))
     return False
 
+def move_robot_step_by_step(moves):
+    global robot_position
+    direction_map = {
+        'u': (-1, 0),
+        'd': (1, 0),
+        'l': (0, -1),
+        'r': (0, 1)
+    }
+
+    for move in moves[:5]:  # Process up to 5 moves at a time
+        if move == 'n':
+            continue
+        if move in direction_map:
+            dx, dy = direction_map[move]
+            new_x = robot_position[0] + dx
+            new_y = robot_position[1] + dy
+
+            if 0 <= new_x < len(game_board) and 0 <= new_y < len(game_board[0]) and game_board[new_x][new_y] == 1:
+                robot_position = [new_x, new_y]
+            else:
+                return False, robot_position
+            time.sleep(0.5)  # Slow down the movement for step-by-step animation
+    return True, robot_position
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -117,7 +142,7 @@ def index():
 def board():
     size = session.get('size', 20)
     map_type = session.get('map_type', 'random')
-    global game_board
+    global game_board, robot_position
 
     if map_type == 'premade':
         game_board = example_map
@@ -129,7 +154,7 @@ def board():
             game_board = make_maze(size, size)
         game_board[0][1] = 2
         game_board[size - 1][size - 2] = 3
-
+    robot_position = [0, 1]
 
     return render_template('board.html', board=game_board, name=session['player_name'])
 
@@ -141,6 +166,12 @@ def start_game():
 def get_board():
     with board_lock:
         return jsonify(game_board)
+
+@app.route('/move', methods=['POST'])
+def move():
+    moves = request.json.get('moves', [])
+    result, position = move_robot_step_by_step(moves)
+    return jsonify({'result': result, 'position': position})
 
 if __name__ == '__main__':
     app.run(debug=True)
