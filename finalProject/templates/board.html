@@ -65,6 +65,9 @@
         .robot {
             background-color: #0000FF;
         }
+        .evil-robot {
+            background-color: #FF00FF;
+        }
         .move-input {
             width: 50px;
             height: 50px;
@@ -93,6 +96,7 @@
     </style>
     <script>
         let robotPosition = [0, 1];
+        let evilRobotPosition = [0, 1];
 
         function startGame() {
             fetch('/start_game', { method: 'POST' })
@@ -133,6 +137,9 @@
                             }
                             if (i === robotPosition[0] && j === robotPosition[1]) {
                                 td.className = 'robot';
+                            }
+                            if (i === evilRobotPosition[0] && j === evilRobotPosition[1]) {
+                                td.className = 'evil-robot';
                             }
                             tr.appendChild(td);
                         });
@@ -206,6 +213,17 @@
                                 updateBoard();
                                 currentIndex++;
                                 setTimeout(moveNext, 500); // Move to the next step after 500ms
+                                if (currentIndex === moves.length) {
+                                    setTimeout(() => {
+                                        fetch('/move_evil_robot', { method: 'POST' })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                evilRobotPosition = data.evil_position;
+                                                updateBoard();
+                                            })
+                                            .catch(error => console.error('Error:', error));
+                                    }, 500); // Delay evil robot movement
+                                }
                             } else {
                                 alert('Invalid move sequence.');
                             }
