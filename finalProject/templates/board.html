@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Game Board</title>
     <style>
+        /* Existing styles */
         body {
             font-family: Arial, sans-serif;
             background-color: #eaeaea;
@@ -68,6 +69,9 @@
         .evil-robot {
             background-color: #FF00FF;
         }
+        .star {
+            background-color: #FFFF00;
+        }
         .move-input {
             width: 50px;
             height: 50px;
@@ -93,10 +97,29 @@
                 box-shadow: 0 0 20px 6px rgba(63, 94, 251, 0.8);
             }
         }
+        #achievement-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #FFD700;
+            color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
     </style>
     <script>
         let robotPosition = [0, 1];
         let evilRobotPosition = [0, 1];
+
+        function showAchievementMessage() {
+            const message = document.getElementById('achievement-message');
+            message.style.display = 'block';
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 10000);
+        }
 
         function startGame() {
             fetch('/start_game', { method: 'POST' })
@@ -131,6 +154,9 @@
                                     break;
                                 case 3:
                                     td.className = 'end';
+                                    break;
+                                case 4:
+                                    td.className = 'star';
                                     break;
                                 default:
                                     td.className = '';
@@ -210,6 +236,9 @@
                         .then(data => {
                             if (data.result) {
                                 robotPosition = data.position;
+                                if (data.collected_star) {
+                                    showAchievementMessage();
+                                }
                                 updateBoard();
                                 currentIndex++;
                                 setTimeout(moveNext, 500); // Move to the next step after 500ms
@@ -254,6 +283,7 @@
         <input type="text" id="move5" class="move-input" maxlength="1" placeholder="Move 5 (u, d, l, r, n)">
     </div>
     <button onclick="submitMoves()">Submit Moves</button>
+    <div id="achievement-message">Achievement Completed!</div>
     <table></table>
 </body>
 </html>

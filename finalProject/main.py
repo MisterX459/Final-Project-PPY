@@ -83,8 +83,16 @@ def make_maze(w, h):
         if maze[ry][rx] == 0:
             maze[ry][rx] = 1
 
-    return maze
+    # Add exactly three stars to the maze
+    stars_added = 0
+    while stars_added < 3:
+        sx = random.randint(1, w - 2)
+        sy = random.randint(1, h - 2)
+        if maze[sy][sx] == 1:
+            maze[sy][sx] = 4  # Star is represented by 4
+            stars_added += 1
 
+    return maze
 def bfs(maze, start, end):
     queue = deque([start])
     visited = set()
@@ -101,9 +109,9 @@ def bfs(maze, start, end):
                 queue.append((nx, ny))
                 visited.add((nx, ny))
     return False
-
 def move_robot_step_by_step(moves):
     global robot_position
+    collected_star = False
     direction_map = {
         'u': (-1, 0),
         'd': (1, 0),
@@ -119,12 +127,15 @@ def move_robot_step_by_step(moves):
             new_x = robot_position[0] + dx
             new_y = robot_position[1] + dy
 
-            if 0 <= new_x < len(game_board) and 0 <= new_y < len(game_board[0]) and game_board[new_x][new_y] == 1:
+            if 0 <= new_x < len(game_board) and 0 <= new_y < len(game_board[0]) and game_board[new_x][new_y] in [1, 4]:
                 robot_position = [new_x, new_y]
+                if game_board[new_x][new_y] == 4:
+                    collected_star = True
+                    game_board[new_x][new_y] = 1  # Remove the star from the board
             else:
-                return False, robot_position
+                return False, robot_position, collected_star
             time.sleep(0.5)  # Slow down the movement for step-by-step animation
-    return True, robot_position
+    return True, robot_position, collected_star
 
 def spawn_evil_robot():
     global evil_robot_position
@@ -249,9 +260,9 @@ def get_board():
 @app.route('/move', methods=['POST'])
 def move():
     moves = request.json.get('moves', [])
-    result, position = move_robot_step_by_step(moves)
+    result, position, collected_star = move_robot_step_by_step(moves)
     print(f"Blue robot moved to: {position}")
-    return jsonify({'result': result, 'position': position, 'evil_position': evil_robot_position})
+    return jsonify({'result': result, 'position': position, 'evil_position': evil_robot_position, 'collected_star': collected_star})
 
 @app.route('/move_evil_robot', methods=['POST'])
 def move_evil_robot_route():
