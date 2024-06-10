@@ -72,6 +72,9 @@
         .star {
             background-color: #FFFF00;
         }
+        .gear {
+            background-color: midnightblue;
+        }
         .move-input {
             width: 50px;
             height: 50px;
@@ -108,10 +111,22 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             display: none;
         }
+
+         #gear-counter {
+            font-size: 16px;
+            color: white;
+            background: linear-gradient(145deg, #fc466b, #3f5efb);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-family: Arial, sans-serif; /* Match font */
+        }
+
     </style>
     <script>
         let robotPosition = [0, 1];
         let evilRobotPosition = [0, 1];
+        let gearCount = 0;
 
         function showAchievementMessage() {
             const message = document.getElementById('achievement-message');
@@ -157,6 +172,9 @@
                                     break;
                                 case 4:
                                     td.className = 'star';
+                                    break;
+                                case 5:
+                                    td.className = 'gear';
                                     break;
                                 default:
                                     td.className = '';
@@ -222,7 +240,6 @@
             }
 
             let currentIndex = 0;
-
             function moveNext() {
                 if (currentIndex < moves.length) {
                     fetch('/move', {
@@ -236,8 +253,12 @@
                         .then(data => {
                             if (data.result) {
                                 robotPosition = data.position;
+                                gearCount = data.gear_count;
                                 if (data.collected_star) {
                                     showAchievementMessage();
+                                }
+                                if (data.collected_gear) {
+                                    document.getElementById('gear-counter').innerText = `Gears Collected: ${gearCount}`;
                                 }
                                 updateBoard();
                                 currentIndex++;
@@ -275,6 +296,7 @@
 <body>
     <h1>Welcome, {{ name }}!</h1>
     <button onclick="startGame()">Start Game</button>
+    <div id="gear-counter">Gears Collected: 0</div>
     <div>
         <input type="text" id="move1" class="move-input" maxlength="1" placeholder="Move 1 (u, d, l, r)">
         <input type="text" id="move2" class="move-input" maxlength="1" placeholder="Move 2 (u, d, l, r)">

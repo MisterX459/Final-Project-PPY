@@ -83,14 +83,23 @@ def make_maze(w, h):
         if maze[ry][rx] == 0:
             maze[ry][rx] = 1
 
-    # Add exactly three stars to the maze
+
     stars_added = 0
     while stars_added < 3:
         sx = random.randint(1, w - 2)
         sy = random.randint(1, h - 2)
         if maze[sy][sx] == 1:
-            maze[sy][sx] = 4  # Star is represented by 4
+            maze[sy][sx] = 4
             stars_added += 1
+
+    gears_added = 0
+    while gears_added < 5:
+        gx = random.randint(1, w - 2)
+        gy = random.randint(1, h - 2)
+        if maze[gy][gx] == 1 and maze[gy][gx] != 4:
+            maze[gy][gx] = 5
+            gears_added += 1
+
 
     return maze
 def bfs(maze, start, end):
@@ -112,6 +121,7 @@ def bfs(maze, start, end):
 def move_robot_step_by_step(moves):
     global robot_position
     collected_star = False
+    collected_gear = False
     direction_map = {
         'u': (-1, 0),
         'd': (1, 0),
@@ -119,7 +129,7 @@ def move_robot_step_by_step(moves):
         'r': (0, 1)
     }
 
-    for move in moves[:5]:  # Process up to 5 moves at a time
+    for move in moves[:5]:
         if move == 'n':
             continue
         if move in direction_map:
@@ -127,22 +137,26 @@ def move_robot_step_by_step(moves):
             new_x = robot_position[0] + dx
             new_y = robot_position[1] + dy
 
-            if 0 <= new_x < len(game_board) and 0 <= new_y < len(game_board[0]) and game_board[new_x][new_y] in [1, 4]:
+            if 0 <= new_x < len(game_board) and 0 <= new_y < len(game_board[0]) and game_board[new_x][new_y] in [1, 4, 5]:
                 robot_position = [new_x, new_y]
                 if game_board[new_x][new_y] == 4:
                     collected_star = True
-                    game_board[new_x][new_y] = 1  # Remove the star from the board
+                    game_board[new_x][new_y] = 1
+
+                if game_board[new_x][new_y] == 5:
+                    collected_gear = True
+                    game_board[new_x][new_y] = 1
             else:
-                return False, robot_position, collected_star
-            time.sleep(0.5)  # Slow down the movement for step-by-step animation
-    return True, robot_position, collected_star
+                return False, robot_position, collected_star,collected_gear
+            time.sleep(0.5)
+    return True, robot_position, collected_star,collected_gear
 
 def spawn_evil_robot():
     global evil_robot_position
     size = len(game_board)
     corners = [
-        (size // 2, 0, size, size // 2),       # Top-right
-        (size // 2, size // 2, size, size)     # Bottom-left
+        (size // 2, 0, size, size // 2),
+        (size // 2, size // 2, size, size)
     ]
     q = random.choice(corners)
     while True:
@@ -159,12 +173,12 @@ def move_evil_robot_step_by_step():
     path = bfs_find_path(game_board, (ex, ey), (px, py))
 
     if path:
-        for nx, ny in path[:5]:  # Process up to 5 steps at a time
+        for nx, ny in path[:5]:
             if game_board[nx][ny] == 1:
                 evil_robot_position = [nx, ny]
                 if evil_robot_position == robot_position:
-                    break  # Stop if the evil robot catches the player
-                time.sleep(0.5)  # Slow down the movement for step-by-step animatio
+                    break
+                time.sleep(0.5)
 
 
 
@@ -209,11 +223,11 @@ def move_evil_robot():
     path = bfs_find_path(game_board, (ex, ey), (px, py))
 
     if path:
-        for nx, ny in path[:5]:  # Process up to 5 steps at a time
+        for nx, ny in path[:5]:
             evil_robot_position = [nx, ny]
             if evil_robot_position == robot_position:
-                break  # Stop if the evil robot catches the player
-            time.sleep(0.5)  # Slow down the movement for step-by-step animation
+                break
+            time.sleep(0.5)
             ex, ey = evil_robot_position
             path = bfs_find_path(game_board, (ex, ey), (px, py))
 @app.route('/', methods=['GET', 'POST'])
@@ -232,6 +246,8 @@ def board():
     size = session.get('size', 20)
     map_type = session.get('map_type', 'random')
     global game_board, robot_position, evil_robot_position
+
+    session['gear_count'] = 0
 
     if map_type == 'premade':
         game_board = example_map
@@ -260,9 +276,11 @@ def get_board():
 @app.route('/move', methods=['POST'])
 def move():
     moves = request.json.get('moves', [])
-    result, position, collected_star = move_robot_step_by_step(moves)
+    result, position, collected_star,collected_gear = move_robot_step_by_step(moves)
+    if collected_gear:
+        session['gear_count'] += 1
     print(f"Blue robot moved to: {position}")
-    return jsonify({'result': result, 'position': position, 'evil_position': evil_robot_position, 'collected_star': collected_star})
+    return jsonify({'result': result, 'position': position, 'evil_position': evil_robot_position, 'collected_star': collected_star, 'collected_gear':collected_gear,'gear_count': session['gear_count']})
 
 @app.route('/move_evil_robot', methods=['POST'])
 def move_evil_robot_route():
