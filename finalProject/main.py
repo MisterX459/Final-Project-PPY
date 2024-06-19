@@ -7,17 +7,27 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 app.secret_key = 'qwerty'
-client=MongoClient("mongodb+srv://admin:1234@cluster0.euh9fdb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-db=client.MazeDB
-collection=db.MazeCollection
+# client=MongoClient("mongodb+srv://admin:1234@cluster0.euh9fdb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+# db=client.MazeDB
+# collection=db.MazeCollection
 
 
 example_map = [
-    [1, 1, 1, 0, 0],
-    [0, 0, 1, 1, 0],
-    [1, 1, 1, 0, 0],
-    [0, 0, 0, 1, 1],
-    [0, 0, 0, 1, 1]
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
 game_board = []
@@ -236,8 +246,8 @@ def move_evil_robot():
             ex, ey = evil_robot_position
             path = bfs_find_path(game_board, (ex, ey), (px, py))
 
-def save_user_data(name, size, map_type):
-    collection.insert_one({"name": name, "size": size, "map_type": map_type})
+# def save_user_data(name, size, map_type):
+#     collection.insert_one({"name": name, "size": size, "map_type": map_type})
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -247,7 +257,7 @@ def index():
         session['size'] = size
         session['map_type'] = map_type
 
-        save_user_data(session['player_name'], session['size'], session['map_type'])
+        # save_user_data(session['player_name'], session['size'], session['map_type'])
 
         return redirect(url_for('board'))
     return render_template('index.html')
@@ -262,12 +272,17 @@ def board():
 
     if map_type == 'premade':
         game_board = example_map
+        size = 15
+        game_board[0][1] = 2
+        game_board[size - 2][size - 2] = 3
     else:
+        game_board = make_maze(size, size)
         start = (1, 0)
         end = (size - 2, size - 1)
-        game_board = make_maze(size, size)
+
         while not bfs(game_board, start, end):
             game_board = make_maze(size, size)
+
         game_board[0][1] = 2
         game_board[size - 1][size - 2] = 3
     robot_position = [0, 1]
