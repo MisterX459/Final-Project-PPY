@@ -3,9 +3,14 @@ import threading
 import random
 import time
 from collections import deque
+from pymongo import MongoClient
 
 app = Flask(__name__)
 app.secret_key = 'qwerty'
+client=MongoClient("mongodb+srv://admin:1234@cluster0.euh9fdb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+db=client.MazeDB
+collection=db.MazeCollection
+
 
 example_map = [
     [1, 1, 1, 0, 0],
@@ -230,6 +235,9 @@ def move_evil_robot():
             time.sleep(0.5)
             ex, ey = evil_robot_position
             path = bfs_find_path(game_board, (ex, ey), (px, py))
+
+def save_user_data(name, size, map_type):
+    collection.insert_one({"name": name, "size": size, "map_type": map_type})
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -238,6 +246,9 @@ def index():
         session['player_name'] = request.form['name']
         session['size'] = size
         session['map_type'] = map_type
+
+        save_user_data(session['player_name'], session['size'], session['map_type'])
+
         return redirect(url_for('board'))
     return render_template('index.html')
 
