@@ -6,7 +6,10 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #eaeaea;
+            background-image: url('/static/back.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -47,32 +50,37 @@
         td {
             width: 20px;
             height: 20px;
-            border: 1px solid #ddd;
-            background-color: #f0f0f0;
-        }
-        .wall {
-            background-color: #000000;
+            border: 2px solid #000000;
+            background-size: cover;
         }
         .path {
-            background-color: #FFFFFF;
+            background-image: url('/static/B_floor.png');
         }
-        .start {
-            background-color: #00FF00;
+
+        .wall {
+            background-image: url('/static/B_wall.png');
+        }
+
+        .star {
+            background-image: url('/static/B_star.png');
+        }
+
+        .robot {
+            background-image: url('/static/B_robo.png');
+        }
+
+        .gear {
+            background-image: url('/static/B_gear.png');
+        }
+
+        .evil-robot {
+            background-image: url('/static/B_evil_robo.png');
         }
         .end {
             background-color: #FF0000;
         }
-        .robot {
-            background-color: #0000FF;
-        }
-        .evil-robot {
-            background-color: #FF00FF;
-        }
-        .star {
-            background-color: #FFFF00;
-        }
-        .gear {
-            background-color: midnightblue;
+        .start {
+            background-color: #00FF00;
         }
         .move-input {
             width: 50px;
@@ -152,44 +160,42 @@
                 .then(data => {
                     const table = document.querySelector('table');
                     table.innerHTML = '';
-                    data.forEach((row, i) => {
-                        const tr = document.createElement('tr');
-                        row.forEach((cell, j) => {
-                            const td = document.createElement('td');
-                            switch(cell) {
-                                case 0:
-                                    td.className = 'wall';
-                                    break;
-                                case 1:
-                                    td.className = 'path';
-                                    break;
-                                case 2:
-                                    td.className = 'start';
-                                    break;
-                                case 3:
-                                    td.className = 'end';
-                                    break;
-                                case 4:
-                                    td.className = 'star';
-                                    break;
-                                case 5:
-                                    td.className = 'gear';
-                                    break;
-                                default:
-                                    td.className = '';
-                            }
-                            if (i === robotPosition[0] && j === robotPosition[1]) {
-                                td.className = 'robot';
-                            }
-                            if (i === evilRobotPosition[0] && j === evilRobotPosition[1]) {
-                                td.className = 'evil-robot';
-                            }
-                            tr.appendChild(td);
-                        });
+                        data.forEach((row, i) => {
+                            const tr = document.createElement('tr');
+                            row.forEach((cell, j) => {
+                                const td = document.createElement('td');
+                                switch(cell) {
+                                    case 0:
+                                        td.className = 'wall';
+                                        break;
+                                    case 1:
+                                        td.className = 'path';
+                                        break;
+                                    case 2:
+                                        td.className = 'start';
+                                        break;
+                                    case 3:
+                                        td.className = 'end';
+                                        break;
+                                    case 4:
+                                        td.className = 'star';
+                                        break;
+                                    case 5:
+                                        td.className = 'gear';
+                                        break;
+                                    default:
+                                        td.className = 'path';
+                                }
+                                if (i === robotPosition[0] && j === robotPosition[1]) {
+                                    td.className = 'robot';
+                                }
+                                if (i === evilRobotPosition[0] && j === evilRobotPosition[1]) {
+                                    td.className = 'evil-robot';
+                                }
+                                tr.appendChild(td);
+                            });
                         table.appendChild(tr);
                     });
-
-
                 })
                 .catch(error => console.error('Error:', error));
         }
