@@ -271,7 +271,8 @@ def board():
     global game_board, robot_position, evil_robot_position
 
     session['gear_count'] = 0
-
+    session['star_count'] = 0
+    session['start_time'] = datetime.now()
 
     if map_type == 'premade':
         game_board = example_map
@@ -304,11 +305,15 @@ def get_board():
         return jsonify(game_board)
 
 
-def save_user_data(name, size, map_type):
+def save_user_data(name, size, map_type,gear_count,star_count,win,start_time,end_time):
     collection.insert_one({"name": name,
                            "size": size,
                            "map_type": map_type,
-                           })
+                           "gear_count": gear_count,
+                           "star_count" : star_count,
+                           "win" : win,
+                           "start_time": start_time,
+                           "end_time": end_time})
 
 @app.route('/move', methods=['POST'])
 def move():
@@ -317,7 +322,8 @@ def move():
     if collected_gear:
         session['gear_count'] += 1
 
-
+    if collected_star:
+        session['star_count'] += 1
     print(f"Blue robot moved to: {position}")
 
     game_over = False
@@ -330,8 +336,9 @@ def move():
         win = False
 
     if game_over:
-
-     save_user_data(session['player_name'], session['size'], session['map_type'])
+     end_time = datetime.now()
+     start_time=session['start_time']
+     save_user_data(session['player_name'], session['size'], session['map_type'], session['gear_count'],session['star_count'], win,start_time,end_time)
 
     return jsonify({
         'result': result,
