@@ -32,8 +32,6 @@ class MazeAppTestCase(unittest.TestCase):
         data = response.data.decode('utf-8')
         self.assertIn('test_player', data)
 
-
-
     def test_can_see_player(self):
         result = can_see_player((0, 0), (0, 1))
         self.assertIsInstance(result, bool)
@@ -46,6 +44,41 @@ class MazeAppTestCase(unittest.TestCase):
         self.assertGreater(open_paths, 0, "Maze should have open paths.")
         self.assertEqual(stars, 3, "Maze should have exactly 3 stars.")
         self.assertEqual(gears, 5, "Maze should have exactly 5 gears.")
+
+    def test_robot_wall_collision(self):
+        global game_board, robot_position
+        game_board = [
+            [0, 2, 0],
+            [0, 1, 0],
+            [0, 0, 0]
+        ]
+        robot_position = [0, 1]
+        moves = ['r']
+        result, position, collected_star, collected_gear = move_robot_step_by_step(moves)
+        self.assertFalse(result)
+        self.assertEqual(position, [0, 1])
+
+    def test_evil_robot_spawn(self):
+        global game_board
+        game_board = make_maze(15, 15)
+        spawn_evil_robot()
+        ex, ey = evil_robot_position
+        self.assertTrue(game_board[ex][ey] == 1)
+
+    def test_bfs(self):
+        maze = make_maze(15, 15)
+        result = bfs(maze, (0, 1), (14, 13))
+        self.assertIn(result, [True, False])
+
+    def test_make_maze(self):
+        maze = make_maze(15, 15)
+        self.assertEqual(len(maze), 15)
+        self.assertEqual(len(maze[0]), 15)
+
+    def test_start_game_post(self):
+        response = self.app.post('/start_game')
+        data = json.loads(response.data)
+        self.assertEqual(data['status'], 'started')
 
 if __name__ == '__main__':
     unittest.main()
