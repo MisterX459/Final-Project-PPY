@@ -227,67 +227,83 @@
             document.getElementById('move5').value = '';
         }
 
-        function submitMoves() {
-            const moves = [
-                document.getElementById('move1').value,
-                document.getElementById('move2').value,
-                document.getElementById('move3').value,
-                document.getElementById('move4').value,
-                document.getElementById('move5').value
-            ];
+function submitMoves() {
+    const moves = [
+        document.getElementById('move1').value,
+        document.getElementById('move2').value,
+        document.getElementById('move3').value,
+        document.getElementById('move4').value,
+        document.getElementById('move5').value
+    ];
 
-            if (!validateMoves(moves)) {
-                return;
-            }
+    if (!validateMoves(moves)) {
+        return;
+    }
 
-            let currentIndex = 0;
-            function moveNext() {
-                if (currentIndex < moves.length) {
-                    fetch('/move', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ moves: [moves[currentIndex]] })
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.result) {
-                                robotPosition = data.position;
-                                gearCount = data.gear_count;
-                                if (data.collected_star) {
-                                    showAchievementMessage();
-                                }
-                                if (data.collected_gear) {
-                                    document.getElementById('gear-counter').innerText = `Gears Collected: ${gearCount}`;
-                                }
-                                updateBoard();
-                                currentIndex++;
-                                setTimeout(moveNext, 500); // Move to the next step after 500ms
-                                if (currentIndex === moves.length) {
-                                    setTimeout(() => {
-                                        fetch('/move_evil_robot', { method: 'POST' })
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                evilRobotPosition = data.evil_position;
-                                                updateBoard();
-                                            })
-                                            .catch(error => console.error('Error:', error));
-                                    }, 500); // Delay evil robot movement
-                                }
-                            } else {
-                                alert('Invalid move sequence.');
-                            }
-                            if (currentIndex === moves.length) {
-                                clearMoveInputs();
-                            }
-                        })
-                        .catch(error => console.error('Error:', error));
+    let currentIndex = 0;
+
+    function moveNext() {
+        if (currentIndex < moves.length) {
+            fetch('/move', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ moves: [moves[currentIndex]] })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result) {
+                    robotPosition = data.position;
+                    gearCount = data.gear_count;
+                    if (data.collected_star) {
+                        showAchievementMessage();
+                    }
+                    if (data.collected_gear) {
+                        document.getElementById('gear-counter').innerText = `Gears Collected: ${gearCount}`;
+                    }
+                    updateBoard();
+
+                    if (data.game_over) {
+                        let message = data.win ? "Congratulations, you won!" : "Game over, you lost!";
+                        alert(message);
+                        window.location.reload();
+                        return;
+                    }
+
+                    currentIndex++;
+                    setTimeout(moveNext, 500);
+                } else {
+                    alert('Invalid move sequence.');
+                    clearMoveInputs();
                 }
-            }
+                if (data.game_over) {
+    let message = data.win ? "Congratulations, you won!" : "Game over, you lost!";
+    alert(message);
+    window.location.reload();
+}
 
-            moveNext();
+            })
+            .catch(error => console.error('Error:', error));
+        } else {
+            fetch('/move_evil_robot', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                evilRobotPosition = data.evil_position;
+                updateBoard();
+
+                if (Math.abs(robotPosition[0] - evilRobotPosition[0]) <= 1 && Math.abs(robotPosition[1] - evilRobotPosition[1]) <= 1) {
+                    alert("Game over, you lost!");
+                    window.location.reload();
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
+    }
+
+    moveNext();
+}
+
 
         document.addEventListener('DOMContentLoaded', () => {
             updateBoard();

@@ -152,19 +152,21 @@ def move_robot_step_by_step(moves):
             new_x = robot_position[0] + dx
             new_y = robot_position[1] + dy
 
-            if 0 <= new_x < len(game_board) and 0 <= new_y < len(game_board[0]) and game_board[new_x][new_y] in [1, 4, 5]:
-                robot_position = [new_x, new_y]
-                if game_board[new_x][new_y] == 4:
-                    collected_star = True
-                    game_board[new_x][new_y] = 1
+            if 0 <= new_x < len(game_board) and 0 <= new_y < len(game_board[0]):
+                target_cell = game_board[new_x][new_y]
+                if target_cell in [1, 4, 5, 3]:
+                    robot_position = [new_x, new_y]
+                    if target_cell == 4:
+                        collected_star = True
+                        game_board[new_x][new_y] = 1
+                    if target_cell == 5:
+                        collected_gear = True
+                        game_board[new_x][new_y] = 1
+                else:
+                    return False, robot_position, collected_star, collected_gear
+                time.sleep(0.5)
+    return True, robot_position, collected_star, collected_gear
 
-                if game_board[new_x][new_y] == 5:
-                    collected_gear = True
-                    game_board[new_x][new_y] = 1
-            else:
-                return False, robot_position, collected_star,collected_gear
-            time.sleep(0.5)
-    return True, robot_position, collected_star,collected_gear
 
 def spawn_evil_robot():
     global evil_robot_position
@@ -302,11 +304,33 @@ def get_board():
 @app.route('/move', methods=['POST'])
 def move():
     moves = request.json.get('moves', [])
-    result, position, collected_star,collected_gear = move_robot_step_by_step(moves)
+    result, position, collected_star, collected_gear = move_robot_step_by_step(moves)
     if collected_gear:
         session['gear_count'] += 1
     print(f"Blue robot moved to: {position}")
-    return jsonify({'result': result, 'position': position, 'evil_position': evil_robot_position, 'collected_star': collected_star, 'collected_gear':collected_gear,'gear_count': session['gear_count']})
+
+    game_over = False
+    win = False
+    if game_board[robot_position[0]][robot_position[1]] == 3:
+        game_over = True
+        win = True
+    elif abs(robot_position[0] - evil_robot_position[0]) <= 1 and abs(robot_position[1] - evil_robot_position[1]) <= 1:
+        game_over = True
+        win = False
+
+    # TODO: Implement saving data logic here if needed
+
+    return jsonify({
+        'result': result,
+        'position': position,
+        'evil_position': evil_robot_position,
+        'collected_star': collected_star,
+        'collected_gear': collected_gear,
+        'gear_count': session['gear_count'],
+        'game_over': game_over,
+        'win': win
+    })
+
 
 @app.route('/move_evil_robot', methods=['POST'])
 def move_evil_robot_route():
