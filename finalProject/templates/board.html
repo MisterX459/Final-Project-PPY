@@ -256,6 +256,7 @@ function submitMoves() {
                 if (data.result) {
                     robotPosition = data.position;
                     gearCount = data.gear_count;
+                    starCount = data.star_count;
                     if (data.collected_star) {
                         showAchievementMessage();
                     }

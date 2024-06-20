@@ -4,12 +4,13 @@ import random
 import time
 from collections import deque
 from pymongo import MongoClient
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'qwerty'
-# client=MongoClient("mongodb+srv://admin:1234@cluster0.euh9fdb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-# db=client.MazeDB
-# collection=db.MazeCollection
+client=MongoClient("mongodb+srv://admin:1234@cluster0.euh9fdb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+db=client.MazeDB
+collection=db.MazeCollection
 
 
 example_map = [
@@ -248,8 +249,7 @@ def move_evil_robot():
             ex, ey = evil_robot_position
             path = bfs_find_path(game_board, (ex, ey), (px, py))
 
-# def save_user_data(name, size, map_type):
-#     collection.insert_one({"name": name, "size": size, "map_type": map_type})
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -259,7 +259,7 @@ def index():
         session['size'] = size
         session['map_type'] = map_type
 
-        # save_user_data(session['player_name'], session['size'], session['map_type'])
+
 
         return redirect(url_for('board'))
     return render_template('index.html')
@@ -271,6 +271,7 @@ def board():
     global game_board, robot_position, evil_robot_position
 
     session['gear_count'] = 0
+
 
     if map_type == 'premade':
         game_board = example_map
@@ -294,6 +295,7 @@ def board():
 
 @app.route('/start_game', methods=['POST'])
 def start_game():
+
     return jsonify({'status': 'started'})
 
 @app.route('/get_board')
@@ -301,12 +303,21 @@ def get_board():
     with board_lock:
         return jsonify(game_board)
 
+
+def save_user_data(name, size, map_type):
+    collection.insert_one({"name": name,
+                           "size": size,
+                           "map_type": map_type,
+                           })
+
 @app.route('/move', methods=['POST'])
 def move():
     moves = request.json.get('moves', [])
     result, position, collected_star, collected_gear = move_robot_step_by_step(moves)
     if collected_gear:
         session['gear_count'] += 1
+
+
     print(f"Blue robot moved to: {position}")
 
     game_over = False
@@ -318,7 +329,9 @@ def move():
         game_over = True
         win = False
 
-    # TODO: Implement saving data logic here if needed
+    if game_over:
+
+     save_user_data(session['player_name'], session['size'], session['map_type'])
 
     return jsonify({
         'result': result,
@@ -327,6 +340,7 @@ def move():
         'collected_star': collected_star,
         'collected_gear': collected_gear,
         'gear_count': session['gear_count'],
+        'star_count': session['star_count'],
         'game_over': game_over,
         'win': win
     })
