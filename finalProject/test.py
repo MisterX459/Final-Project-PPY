@@ -80,5 +80,43 @@ class MazeAppTestCase(unittest.TestCase):
         data = json.loads(response.data)
         self.assertEqual(data['status'], 'started')
 
+    def test_get_board(self):
+            response = self.app.get('/get_board')
+            self.assertEqual(response.status_code, 200)
+            data = json.loads(response.data)
+            self.assertIsInstance(data, list)
+
+    def test_move_post(self):
+        moves = {'moves': ['r', 'r', 'd', 'd']}
+        response = self.app.post('/move', json=moves)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertIn('result', data)
+        self.assertIn('position', data)
+
+    def test_validate_size(self):
+        self.assertEqual(validate_size('9'), 11)
+        self.assertEqual(validate_size('26'), 25)
+        self.assertEqual(validate_size('15'), 15)
+        self.assertEqual(validate_size('16'), 17)
+
+    def test_move_robot_step_by_step(self):
+        global game_board, robot_position
+        game_board = make_maze(15, 15)
+        robot_position = [0, 1]
+        moves = ['r', 'r', 'd', 'd']
+        result, position, collected_star, collected_gear = move_robot_step_by_step(moves)
+        self.assertIsInstance(result, bool)
+        self.assertIsInstance(position, list)
+        self.assertIsInstance(collected_star, bool)
+        self.assertIsInstance(collected_gear, bool)
+
+    def test_move_evil_robot_post(self):
+         response = self.app.post('/move_evil_robot')
+         self.assertEqual(response.status_code, 200)
+         data = json.loads(response.data)
+         self.assertIn('evil_position', data)
+
+
 if __name__ == '__main__':
     unittest.main()
